@@ -189,6 +189,12 @@ function validateTheme(cfg) {
       ) {
         errors.push(`customization.petTint must be a boolean, got ${JSON.stringify(cfg.customization.petTint)}`);
       }
+      if (
+        cfg.customization.accessoryAnimations !== undefined
+        && typeof cfg.customization.accessoryAnimations !== "boolean"
+      ) {
+        errors.push(`customization.accessoryAnimations must be a boolean, got ${JSON.stringify(cfg.customization.accessoryAnimations)}`);
+      }
       const accessoryResult = normalizeAccessoryAttachments(
         cfg.customization.accessories,
         cfg
@@ -872,6 +878,13 @@ function buildCapabilities(cfg, options = {}) {
       && cfg.customization.petTint === true
     ),
     accessories: deriveAccessoryCapability(cfg),
+    // Opt-in per theme: lets the renderer apply the app-owned CSS idle-sway /
+    // swing animations to accessories (see src/styles.css). Off by default
+    // so external themes aren't silently animated without review.
+    accessoryAnimations: !!(
+      isPlainObject(cfg && cfg.customization)
+      && cfg.customization.accessoryAnimations === true
+    ),
   };
 }
 
@@ -1065,6 +1078,10 @@ function mergeDefaults(raw, themeId, isBuiltin) {
     petTint: !!(
       isPlainObject(raw.customization)
       && raw.customization.petTint === true
+    ),
+    accessoryAnimations: !!(
+      isPlainObject(raw.customization)
+      && raw.customization.accessoryAnimations === true
     ),
     accessories: null,
   };

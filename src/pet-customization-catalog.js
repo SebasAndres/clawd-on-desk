@@ -127,6 +127,63 @@ const PET_ACCESSORY_CATALOG = Object.freeze([
     offsetY: -1.4,
     themeWidthScales: { clawd: 0.9 },
   }),
+  // The four entries below are positioned against the built-in "clawd"
+  // theme's actual body geometry (assets/svg/clawd-idle-follow.svg: torso
+  // rect y="6" h="7", eyes at y="8..10" (x="4..5" and "10..11"), legs from
+  // y="11"). offsetY is the accessory's *bottom* edge relative to the
+  // theme's baseY=6.5 attachment line (bigger = sinks further down the
+  // torso); every entry here keeps its top edge at y>=11.0, a real margin
+  // below the eyes (not just a hair under them), so it drapes over the
+  // belly instead of covering the face. The granadero's saber is offset
+  // sideways (not just down) past x=11 for the same reason — a straight
+  // vertical drop from the hat would cross directly over the right eye.
+  //
+  // That margin needs to be a real unit or more, not a few tenths: once
+  // "accessoryAnimations" is on, accessory-idle-sway (src/styles.css)
+  // rotates the accessory rect ±2° around its own center every cycle,
+  // which alone eats ~0.2 units of clearance at the top corners. The
+  // original tuning here (offsetY 7.9/8.2, top edge landing at y=10.4)
+  // predated that animation and left only 0.4 units of headroom below
+  // the eyes (y=10) — enough for the sway to tip the scarf into the eye
+  // on every swing, as seen in a screenshot report. offsetY bumped by
+  // +0.6 across the board to restore a comfortable margin.
+  freezeAccessory({
+    id: "escarapela",
+    labelKey: "accessoryEscarapela",
+    file: "escarapela.svg",
+    viewBox: { x: 0, y: 0, width: 11, height: 11 },
+    // 0.25 is the layout engine's hard floor (pet-accessory-layout.js
+    // rejects anything smaller and silently hides the accessory) — a
+    // previous 0.15 here made the escarapela invisible.
+    widthScale: 0.25,
+    offsetY: 8.5,
+  }),
+  freezeAccessory({
+    id: "granadero-hat",
+    labelKey: "accessoryGranaderoHat",
+    file: "granadero-hat.svg",
+    // Wide composite: hat centered up top, saber held out to the right
+    // (clear of the eyes) reaching down toward the legs.
+    viewBox: { x: 0, y: 0, width: 20, height: 21 },
+    widthScale: 0.7,
+    offsetY: 5,
+  }),
+  freezeAccessory({
+    id: "argentina-badge",
+    labelKey: "accessoryArgentinaBadge",
+    file: "argentina-badge.svg",
+    viewBox: { x: 0, y: 0, width: 14, height: 5 },
+    widthScale: 0.75,
+    offsetY: 8.8,
+  }),
+  freezeAccessory({
+    id: "boca-scarf",
+    labelKey: "accessoryBocaScarf",
+    file: "boca-scarf.svg",
+    viewBox: { x: 0, y: 0, width: 15, height: 5 },
+    widthScale: 0.75,
+    offsetY: 8.5,
+  }),
 ]);
 
 const PET_ACCESSORY_BY_ID = new Map(PET_ACCESSORY_CATALOG.map((entry) => [entry.id, entry]));

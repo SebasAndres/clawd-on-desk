@@ -95,6 +95,7 @@ function createThemeContext(theme, options = {}) {
       rendering: theme.rendering || { svgChannel: "auto" },
       petTintSupported: !!(theme._capabilities && theme._capabilities.petTint),
       accessorySupported: !!(theme._capabilities && theme._capabilities.accessories),
+      accessoryAnimationsSupported: !!(theme._capabilities && theme._capabilities.accessoryAnimations),
       accessoryAttachments: (
         theme._capabilities
         && theme._capabilities.accessories

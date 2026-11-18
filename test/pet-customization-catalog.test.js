@@ -128,6 +128,10 @@ describe("pet customization catalog", () => {
         "santa-hat",
         "pumpkin-hat",
         "halo",
+        "escarapela",
+        "granadero-hat",
+        "argentina-badge",
+        "boca-scarf",
       ]
     );
     assert.strictEqual(new Set(PET_ACCESSORY_IDS).size, PET_ACCESSORY_IDS.length);

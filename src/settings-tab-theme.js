@@ -271,6 +271,7 @@
       petTint: null,
       petAccessory: null,
       holidayAccessoryEnabled: null,
+      teamAccessoryEnabled: null,
     };
     const back = document.createElement("button");
     back.type = "button";
@@ -315,6 +316,7 @@
     if (caps.accessories === true) {
       section.appendChild(buildThemeAccessoryRow(theme));
       section.appendChild(buildHolidayAccessoryRow(theme));
+      section.appendChild(buildTeamAccessoryRow(theme));
     }
     parent.appendChild(section);
   }
@@ -583,6 +585,94 @@
     return row;
   }
 
+  function getTeamAccessoryEnabled(themeId) {
+    const selections = state.snapshot && state.snapshot.teamAccessoryEnabled;
+    return !!(
+      selections
+      && typeof selections === "object"
+      && !Array.isArray(selections)
+      && selections[themeId] === true
+    );
+  }
+
+  function buildTeamAccessoryRow(theme) {
+    const row = document.createElement("div");
+    row.className = "row theme-customization-row team-accessory-row";
+
+    const text = document.createElement("div");
+    text.className = "row-text";
+    const label = document.createElement("span");
+    label.className = "row-label";
+    label.textContent = t("rowTeamAccessory");
+    const desc = document.createElement("span");
+    desc.className = "row-desc";
+    desc.textContent = t("themeTeamAccessoryDesc");
+    text.appendChild(label);
+    text.appendChild(desc);
+
+    const control = document.createElement("div");
+    control.className = "row-control";
+    const sw = document.createElement("div");
+    sw.className = "switch team-accessory-switch";
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-label", t("rowTeamAccessory"));
+    sw.setAttribute("tabindex", "0");
+    let visualEnabled = getTeamAccessoryEnabled(theme.id);
+
+    function setVisual(enabled, { pending = false } = {}) {
+      visualEnabled = !!enabled;
+      helpers.setSwitchVisual(sw, visualEnabled, { pending });
+    }
+
+    function syncFromSnapshot() {
+      setVisual(getTeamAccessoryEnabled(theme.id));
+    }
+
+    if (mountedCustomizationControls && mountedCustomizationControls.themeId === theme.id) {
+      mountedCustomizationControls.teamAccessoryEnabled = syncFromSnapshot;
+    }
+
+    function run(ev) {
+      if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+      if (sw.classList.contains("pending")) return;
+      const nextEnabled = !visualEnabled;
+      const current = state.snapshot && state.snapshot.teamAccessoryEnabled;
+      const nextMap = current && typeof current === "object" && !Array.isArray(current)
+        ? { ...current }
+        : {};
+      if (nextEnabled) nextMap[theme.id] = true;
+      else delete nextMap[theme.id];
+      setVisual(nextEnabled, { pending: true });
+      Promise.resolve(window.settingsAPI.update("teamAccessoryEnabled", nextMap))
+        .then((result) => {
+          if (result && result.status === "ok") return;
+          const message = (result && result.message) || "unknown error";
+          ops.showToast(t("toastSaveFailed") + message, { error: true });
+          setVisual(getTeamAccessoryEnabled(theme.id));
+        })
+        .catch((err) => {
+          const message = (err && err.message) || "unknown error";
+          ops.showToast(t("toastSaveFailed") + message, { error: true });
+          setVisual(getTeamAccessoryEnabled(theme.id));
+        })
+        .finally(() => {
+          if (document.body.contains(sw)) sw.classList.remove("pending");
+        });
+    }
+
+    sw.addEventListener("click", run);
+    sw.addEventListener("keydown", (ev) => {
+      if (ev.key !== " " && ev.key !== "Enter") return;
+      run(ev);
+    });
+
+    control.appendChild(sw);
+    row.appendChild(text);
+    row.appendChild(control);
+    setVisual(visualEnabled);
+    return row;
+  }
+
   function patchInPlace(changes) {
     if (!changes || typeof changes !== "object" || !mountedCustomizationControls) return false;
     if (mountedCustomizationControls.themeId !== customizingThemeId) return false;
@@ -592,6 +682,7 @@
       "petTint",
       "petAccessory",
       "holidayAccessoryEnabled",
+      "teamAccessoryEnabled",
     ]);
     if (keys.length === 0 || !keys.every((key) => customizationKeys.has(key))) return false;
 

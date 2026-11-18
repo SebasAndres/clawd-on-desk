@@ -124,7 +124,9 @@ html, body {
 
 @media (prefers-reduced-motion: reduce) {
   .clawd-test-confetti,
-  #pet-facing-stage.clawd-test-shake {
+  #pet-facing-stage.clawd-test-shake,
+  .clawd-accessory.accessory-idle-sway,
+  .clawd-accessory.accessory-swing-granadero {
     animation: none;
   }
 }
@@ -142,6 +144,42 @@ html, body {
   transform-origin: 0 0;
   image-rendering: pixelated;
   filter: none;
+}
+
+/* ── Accessory idle animation ──
+   accessoryEl.style.transform is JS-driven (see applyAccessoryLayout in
+   renderer.js) and rewritten on every layout refresh, so it can't also
+   carry a CSS animation without the two fighting over the same property.
+   The individual `rotate` property composes independently of `transform`
+   (matches the existing #pet-facing-stage shake animation below), so the
+   idle sway/swing lives there instead. Gated by class, not a bare
+   .clawd-accessory rule, so accessories on themes without
+   accessoryAnimations support stay perfectly still. */
+.clawd-accessory.accessory-idle-sway {
+  transform-origin: 50% 50%;
+  animation: accessory-idle-sway 3.2s ease-in-out infinite;
+}
+
+@keyframes accessory-idle-sway {
+  0%, 100% { rotate: -2deg; }
+  50% { rotate: 2deg; }
+}
+
+/* The granadero's saber is offset to the right of the hat in the source SVG
+   (see assets/accessories/granadero-hat.svg) specifically so it clears the
+   pet's eyes. Pivoting near the top of that image (roughly where the hat
+   sits) keeps the hat nearly still while the far-away blade sweeps a wide
+   arc — a periodic practice swing rather than a constant wiggle. */
+.clawd-accessory.accessory-swing-granadero {
+  transform-origin: 50% 8%;
+  animation: accessory-swing-granadero 2.6s ease-in-out infinite;
+}
+
+@keyframes accessory-swing-granadero {
+  0%, 55% { rotate: -4deg; }
+  70% { rotate: 26deg; }
+  85% { rotate: -10deg; }
+  100% { rotate: -4deg; }
 }
 
 /* ── Roam walk animation ──

@@ -176,6 +176,36 @@ test("renderer config exposes normalized accessory attachments only for capable 
   }
 });
 
+test("renderer config exposes accessoryAnimationsSupported only for capable themes", () => {
+  const fixture = makeRoot();
+  try {
+    const capable = makeTheme({
+      _capabilities: { petTint: true, accessories: true, accessoryAnimations: true },
+    });
+    const disabled = makeTheme({
+      _capabilities: { petTint: true, accessories: true, accessoryAnimations: false },
+    });
+    const unset = makeTheme({
+      _capabilities: { petTint: true, accessories: true },
+    });
+
+    assert.strictEqual(
+      createThemeContext(capable, fixture).getRendererConfig().accessoryAnimationsSupported,
+      true
+    );
+    assert.strictEqual(
+      createThemeContext(disabled, fixture).getRendererConfig().accessoryAnimationsSupported,
+      false
+    );
+    assert.strictEqual(
+      createThemeContext(unset, fixture).getRendererConfig().accessoryAnimationsSupported,
+      false
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test("external renderer asset path keeps the legacy default when file URL is absent", () => {
   const fixture = makeRoot();
   try {

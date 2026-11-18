@@ -127,12 +127,17 @@ function createSettingsEffectRouter(options = {}) {
       const tintId = getPetTintIdForTheme(changes.petTint, activeTheme && activeTheme._id);
       sendToRenderer("pet-tint-change", resolvePetTintPayload(tintId, activeTheme));
     }
-    if ("petAccessory" in changes || "holidayAccessoryEnabled" in changes) {
+    if (
+      "petAccessory" in changes
+      || "holidayAccessoryEnabled" in changes
+      || "teamAccessoryEnabled" in changes
+    ) {
       const activeTheme = getActiveTheme();
       const snapshot = settingsController.getSnapshot();
       const accessoryId = getEffectivePetAccessoryIdForTheme({
         petAccessory: snapshot.petAccessory,
         holidayAccessoryEnabled: snapshot.holidayAccessoryEnabled,
+        teamAccessoryEnabled: snapshot.teamAccessoryEnabled,
         themeId: activeTheme && activeTheme._id,
         date: now(),
       });

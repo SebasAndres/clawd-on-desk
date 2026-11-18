@@ -56,6 +56,7 @@ let _accessoryPayload = {
   offsetY: 0,
 };
 let _accessorySupported = false;
+let _accessoryAnimationsSupported = false;
 let _accessoryAttachments = null;
 let _accessoryAssetFile = null;
 let _accessoryAssetReady = false;
@@ -91,6 +92,7 @@ function initWithConfig(cfg) {
     _petTintPayload = normalizePetTintPayload(tc.petTintPayload);
   }
   _accessorySupported = tc.accessorySupported === true;
+  _accessoryAnimationsSupported = tc.accessoryAnimationsSupported === true;
   _accessoryAttachments = (
     _accessorySupported
     && tc.accessoryAttachments
@@ -139,6 +141,7 @@ function initWithConfig(cfg) {
 
   applyObjectScaleStyle(clawdEl, getObjectSvgName(clawdEl), null);
   applyObjectScaleStyle(pendingNext, getObjectSvgName(pendingNext), null);
+  updateAccessoryAnimationClass(_accessoryPayload.id);
   if (_accessorySupported && _accessoryPayload.id !== "none") {
     ensureAccessoryAsset();
   }
@@ -939,10 +942,20 @@ function refreshAccessoryLayout() {
   }
 }
 
+function updateAccessoryAnimationClass(id) {
+  if (!accessoryEl) return;
+  accessoryEl.classList.remove("accessory-idle-sway", "accessory-swing-granadero");
+  if (!_accessoryAnimationsSupported || id === "none") return;
+  accessoryEl.classList.add(
+    id === "granadero-hat" ? "accessory-swing-granadero" : "accessory-idle-sway"
+  );
+}
+
 function setAccessoryPayload(payload) {
   const next = normalizeAccessoryPayload(payload);
   const fileChanged = next.assetFile !== _accessoryAssetFile;
   _accessoryPayload = next;
+  updateAccessoryAnimationClass(next.id);
   if (next.id === "none" || !_accessorySupported) {
     clearAccessoryRuntime({ clearAsset: true });
     refreshAccessoryMediaChannel();

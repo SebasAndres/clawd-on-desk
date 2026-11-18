@@ -1856,6 +1856,27 @@ describe("prefs.save", () => {
     );
   });
 
+  it("round-trips per-theme team accessory opt-ins and stores only true entries", () => {
+    const p = makeTempPath();
+    prefs.save(p, {
+      ...prefs.getDefaults(),
+      teamAccessoryEnabled: {
+        clawd: true,
+        cloudling: false,
+        "../unsafe": true,
+        calico: "true",
+      },
+    });
+    assert.deepStrictEqual(
+      prefs.load(p).snapshot.teamAccessoryEnabled,
+      { clawd: true }
+    );
+    assert.deepStrictEqual(
+      prefs.validate({ teamAccessoryEnabled: true }).teamAccessoryEnabled,
+      {}
+    );
+  });
+
   it("validates before writing — bad fields fall back to defaults on disk", () => {
     const p = makeTempPath();
     const dirty = {

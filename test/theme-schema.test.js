@@ -118,7 +118,28 @@ describe("theme schema validation", () => {
     );
     assert.deepStrictEqual(
       schema.mergeDefaults(validThemeJson()).customization,
-      { petTint: false, accessories: null }
+      { petTint: false, accessoryAnimations: false, accessories: null }
+    );
+  });
+
+  it("validates and derives the explicit accessory animations capability", () => {
+    assert.deepStrictEqual(
+      schema.validateTheme(validThemeJson({ customization: { accessoryAnimations: true } })),
+      []
+    );
+    const errors = schema.validateTheme(
+      validThemeJson({ customization: { accessoryAnimations: "yes" } })
+    );
+    assert.ok(
+      errors.some((error) => error.includes("customization.accessoryAnimations")),
+      `expected a customization.accessoryAnimations error, got ${JSON.stringify(errors)}`
+    );
+
+    assert.strictEqual(schema.buildCapabilities(validThemeJson()).accessoryAnimations, false);
+    assert.strictEqual(
+      schema.buildCapabilities(validThemeJson({ customization: { accessoryAnimations: true } }))
+        .accessoryAnimations,
+      true
     );
   });
 

@@ -5,6 +5,10 @@ const {
   isPetAccessoryId,
   resolvePetAccessoryPayload,
 } = require("./pet-customization-catalog");
+const {
+  getTeamAccessoryForDate,
+  isTeamAccessoryEnabledForTheme,
+} = require("./team-accessory");
 
 const MAX_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 const MIN_REFRESH_DELAY_MS = 1000;
@@ -41,6 +45,36 @@ const HOLIDAY_ACCESSORY_WINDOWS = Object.freeze([
       { month: 1, startDay: 1, endDay: 2 },
     ],
   }),
+  // Argentine patriotic holidays (fixed calendar dates, no "trasladable"
+  // Monday-shifting logic — this is a cosmetic outfit, not a payroll calendar).
+  freezeWindow({
+    id: "dia-revolucion-de-mayo",
+    accessoryId: "escarapela",
+    ranges: [
+      { month: 5, startDay: 25, endDay: 25 },
+    ],
+  }),
+  freezeWindow({
+    id: "dia-de-la-bandera",
+    accessoryId: "argentina-badge",
+    ranges: [
+      { month: 6, startDay: 20, endDay: 20 },
+    ],
+  }),
+  freezeWindow({
+    id: "dia-de-la-independencia",
+    accessoryId: "granadero-hat",
+    ranges: [
+      { month: 7, startDay: 9, endDay: 9 },
+    ],
+  }),
+  freezeWindow({
+    id: "dia-del-paso-a-la-inmortalidad-de-san-martin",
+    accessoryId: "granadero-hat",
+    ranges: [
+      { month: 8, startDay: 17, endDay: 17 },
+    ],
+  }),
 ]);
 
 function isValidDate(value) {
@@ -73,18 +107,26 @@ function isHolidayAccessoryEnabledForTheme(selections, themeId) {
   return selections[themeId] === true;
 }
 
+// Priority: patriotic holiday > that day's Boca Juniors roll > manual pick.
+// Both automatic layers fall back to the manual accessory when they have
+// nothing to show, so the user's saved choice is still the resting state.
 function getEffectivePetAccessoryIdForTheme({
   petAccessory,
   holidayAccessoryEnabled,
+  teamAccessoryEnabled,
   themeId,
   date = new Date(),
 } = {}) {
   const manualAccessoryId = getPetAccessoryIdForTheme(petAccessory, themeId);
-  if (!isHolidayAccessoryEnabledForTheme(holidayAccessoryEnabled, themeId)) {
-    return manualAccessoryId;
+  if (isHolidayAccessoryEnabledForTheme(holidayAccessoryEnabled, themeId)) {
+    const holiday = getHolidayAccessoryForDate(date);
+    if (holiday) return holiday.accessoryId;
   }
-  const holiday = getHolidayAccessoryForDate(date);
-  return holiday ? holiday.accessoryId : manualAccessoryId;
+  if (isTeamAccessoryEnabledForTheme(teamAccessoryEnabled, themeId)) {
+    const team = getTeamAccessoryForDate(date);
+    if (team && isPetAccessoryId(team.accessoryId)) return team.accessoryId;
+  }
+  return manualAccessoryId;
 }
 
 function getNextHolidayRefreshDelay(date = new Date()) {
@@ -137,6 +179,7 @@ function createHolidayAccessoryRuntime(options = {}) {
     const accessoryId = getEffectivePetAccessoryIdForTheme({
       petAccessory: snapshot.petAccessory,
       holidayAccessoryEnabled: snapshot.holidayAccessoryEnabled,
+      teamAccessoryEnabled: snapshot.teamAccessoryEnabled,
       themeId,
       date: now(),
     });

@@ -12,7 +12,7 @@ const {
 const ASSET_DIR = path.join(__dirname, "..", "assets", "accessories");
 
 describe("accessory asset audit", () => {
-  it("ships exactly the catalog's seven local SVG assets with matching viewBoxes", () => {
+  it("ships exactly the catalog's eleven local SVG assets with matching viewBoxes", () => {
     const catalogAssets = PET_ACCESSORY_CATALOG
       .filter((entry) => entry.id !== "none")
       .map((entry) => entry.file)
@@ -22,7 +22,7 @@ describe("accessory asset audit", () => {
       .sort();
 
     assert.deepStrictEqual(diskAssets, catalogAssets);
-    assert.strictEqual(diskAssets.length, 7);
+    assert.strictEqual(diskAssets.length, 11);
 
     for (const entry of PET_ACCESSORY_CATALOG.filter((item) => item.id !== "none")) {
       const source = fs.readFileSync(path.join(ASSET_DIR, entry.file), "utf8");

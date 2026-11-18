@@ -28,6 +28,10 @@ describe("holiday accessory date rules", () => {
         { id: "halloween", accessoryId: "pumpkin-hat" },
         { id: "christmas", accessoryId: "santa-hat" },
         { id: "new-year", accessoryId: "party-hat" },
+        { id: "dia-revolucion-de-mayo", accessoryId: "escarapela" },
+        { id: "dia-de-la-bandera", accessoryId: "argentina-badge" },
+        { id: "dia-de-la-independencia", accessoryId: "granadero-hat" },
+        { id: "dia-del-paso-a-la-inmortalidad-de-san-martin", accessoryId: "granadero-hat" },
       ]
     );
     assert.ok(Object.isFrozen(HOLIDAY_ACCESSORY_WINDOWS));
@@ -54,6 +58,18 @@ describe("holiday accessory date rules", () => {
       [1, 1, "party-hat"],
       [1, 2, "party-hat"],
       [1, 3, null],
+      [5, 24, null],
+      [5, 25, "escarapela"],
+      [5, 26, null],
+      [6, 19, null],
+      [6, 20, "argentina-badge"],
+      [6, 21, null],
+      [7, 8, null],
+      [7, 9, "granadero-hat"],
+      [7, 10, null],
+      [8, 16, null],
+      [8, 17, "granadero-hat"],
+      [8, 18, null],
     ];
     for (const [month, day, expected] of cases) {
       const resolved = getHolidayAccessoryForDate(localDate(month, day));
@@ -120,6 +136,46 @@ describe("holiday accessory date rules", () => {
       themeId: "clawd",
       date: localDate(10, 31),
     }), "pumpkin-hat");
+  });
+
+  it("composes patriotic holidays over the daily Boca roll over the manual pick", () => {
+    const manual = { clawd: "wizard-hat" };
+    // 2026-04-10 is a non-holiday date that hits the default 15% Boca roll;
+    // 2026-02-01 is a non-holiday date that misses it (see team-accessory.test.js).
+    const bocaDay = localDate(4, 10);
+    const quietDay = localDate(2, 1);
+
+    assert.strictEqual(getEffectivePetAccessoryIdForTheme({
+      petAccessory: manual,
+      holidayAccessoryEnabled: {},
+      teamAccessoryEnabled: {},
+      themeId: "clawd",
+      date: bocaDay,
+    }), "wizard-hat", "team accessory off falls back to manual even on a hit day");
+
+    assert.strictEqual(getEffectivePetAccessoryIdForTheme({
+      petAccessory: manual,
+      holidayAccessoryEnabled: {},
+      teamAccessoryEnabled: { clawd: true },
+      themeId: "clawd",
+      date: quietDay,
+    }), "wizard-hat", "a miss day falls back to manual");
+
+    assert.strictEqual(getEffectivePetAccessoryIdForTheme({
+      petAccessory: manual,
+      holidayAccessoryEnabled: {},
+      teamAccessoryEnabled: { clawd: true },
+      themeId: "clawd",
+      date: bocaDay,
+    }), "boca-scarf", "a hit day wears the scarf");
+
+    assert.strictEqual(getEffectivePetAccessoryIdForTheme({
+      petAccessory: manual,
+      holidayAccessoryEnabled: { clawd: true },
+      teamAccessoryEnabled: { clawd: true },
+      themeId: "clawd",
+      date: localDate(5, 25),
+    }), "escarapela", "a patriotic holiday wins over the Boca roll");
   });
 
   it("refreshes no later than the next local midnight or one hour", () => {

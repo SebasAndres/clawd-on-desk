@@ -1311,6 +1311,7 @@ function syncRendererStateAfterLoad({ includeStartupRecovery = true } = {}) {
   const accessoryId = getEffectivePetAccessoryIdForTheme({
     petAccessory,
     holidayAccessoryEnabled: _settingsController.get("holidayAccessoryEnabled"),
+    teamAccessoryEnabled: _settingsController.get("teamAccessoryEnabled"),
     themeId: activeTheme && activeTheme._id,
   });
   sendToRenderer("pet-accessory-change", resolvePetAccessoryPayload(accessoryId, activeTheme));
@@ -1808,6 +1809,7 @@ function buildRendererThemeConfig() {
     const accessoryId = getEffectivePetAccessoryIdForTheme({
       petAccessory: _settingsController.get("petAccessory"),
       holidayAccessoryEnabled: _settingsController.get("holidayAccessoryEnabled"),
+      teamAccessoryEnabled: _settingsController.get("teamAccessoryEnabled"),
       themeId: activeTheme && activeTheme._id,
     });
     cfg.idleDefaultVisual = getIdleVisualChoice();

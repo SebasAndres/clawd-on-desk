@@ -554,6 +554,34 @@ describe("settings-effect-router", () => {
     assert.strictEqual(calls.some((call) => call[0] === "rebuildAllMenus"), false);
   });
 
+  it("temporarily resolves the daily Boca Juniors roll from an independent opt-in", () => {
+    const clawd = {
+      _id: "clawd",
+      _builtin: true,
+      _capabilities: { accessories: true },
+    };
+    const { calls, emit } = createHarness({
+      initialSnapshot: {
+        petAccessory: { clawd: "wizard-hat" },
+        teamAccessoryEnabled: {},
+      },
+      routerOptions: {
+        getActiveTheme: () => clawd,
+        // 2026-04-10 is a non-holiday date that hits the default 15% roll
+        // (see team-accessory.test.js).
+        now: () => new Date(2026, 3, 10, 12, 0, 0, 0),
+      },
+    });
+
+    emit({ teamAccessoryEnabled: { clawd: true } });
+    assert.strictEqual(calls[1][2].id, "boca-scarf");
+
+    calls.length = 0;
+    emit({ teamAccessoryEnabled: {} });
+    assert.strictEqual(calls[1][2].id, "wizard-hat");
+    assert.strictEqual(calls.some((call) => call[0] === "rebuildAllMenus"), false);
+  });
+
   it("broadcasts settings changes only to live renderer windows", () => {
     const calls = [];
     const windows = [

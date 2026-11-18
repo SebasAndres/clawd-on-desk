@@ -345,6 +345,15 @@ const SCHEMA = {
     defaultFactory: () => ({}),
     normalize: normalizeHolidayAccessoryEnabled,
   },
+  // Per-theme opt-in for the random daily Boca Juniors scarf (see
+  // team-accessory.js). Same shape and semantics as holidayAccessoryEnabled;
+  // it composes with it (holiday wins when both would apply) rather than
+  // replacing it.
+  teamAccessoryEnabled: {
+    type: "object",
+    defaultFactory: () => ({}),
+    normalize: normalizeTeamAccessoryEnabled,
+  },
   // Phase 2/3 placeholders — schema reserves the keys so future migrations don't need v2.
   agents: {
     type: "object",
@@ -1248,7 +1257,9 @@ function normalizePetAccessory(value, defaultsValue) {
   return out;
 }
 
-function normalizeHolidayAccessoryEnabled(value, defaultsValue) {
+// Shared shape for "per-theme boolean opt-in" prefs (holiday / team accessory
+// auto-outfit toggles): missing or false entries mean disabled.
+function normalizeThemeIdBooleanMap(value, defaultsValue) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return defaultsValue;
   const out = {};
   for (const [themeId, enabled] of Object.entries(value)) {
@@ -1256,6 +1267,14 @@ function normalizeHolidayAccessoryEnabled(value, defaultsValue) {
     if (enabled === true) out[themeId] = true;
   }
   return out;
+}
+
+function normalizeHolidayAccessoryEnabled(value, defaultsValue) {
+  return normalizeThemeIdBooleanMap(value, defaultsValue);
+}
+
+function normalizeTeamAccessoryEnabled(value, defaultsValue) {
+  return normalizeThemeIdBooleanMap(value, defaultsValue);
 }
 
 function normalizeIdleVisual(value, defaultsValue) {

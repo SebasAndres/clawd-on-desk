@@ -379,6 +379,23 @@ const updateRegistry = {
     }
     return { status: "ok" };
   },
+  teamAccessoryEnabled(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return { status: "error", message: "teamAccessoryEnabled must be a theme-to-boolean object" };
+    }
+    for (const [themeId, enabled] of Object.entries(value)) {
+      if (
+        !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(themeId)
+        || enabled !== true
+      ) {
+        return {
+          status: "error",
+          message: `teamAccessoryEnabled entry "${themeId}" must map a safe theme id to true`,
+        };
+      }
+    }
+    return { status: "ok" };
+  },
   bubbleFollowPet: requireBoolean("bubbleFollowPet"),
   sessionHudEnabled: requireBoolean("sessionHudEnabled"),
   sessionHudShowStateLabels: requireBoolean("sessionHudShowStateLabels"),
@@ -1051,6 +1068,7 @@ async function removeTheme(payload, deps) {
   const currentPetTint = snapshot.petTint || {};
   const currentPetAccessory = snapshot.petAccessory || {};
   const currentHolidayAccessoryEnabled = snapshot.holidayAccessoryEnabled || {};
+  const currentTeamAccessoryEnabled = snapshot.teamAccessoryEnabled || {};
   const nextCommit = {};
   if (currentOverrides[themeId]) {
     const nextOverrides = { ...currentOverrides };
@@ -1081,6 +1099,11 @@ async function removeTheme(payload, deps) {
     const nextHolidayAccessoryEnabled = { ...currentHolidayAccessoryEnabled };
     delete nextHolidayAccessoryEnabled[themeId];
     nextCommit.holidayAccessoryEnabled = nextHolidayAccessoryEnabled;
+  }
+  if (currentTeamAccessoryEnabled[themeId] !== undefined) {
+    const nextTeamAccessoryEnabled = { ...currentTeamAccessoryEnabled };
+    delete nextTeamAccessoryEnabled[themeId];
+    nextCommit.teamAccessoryEnabled = nextTeamAccessoryEnabled;
   }
   if (Object.keys(nextCommit).length > 0) {
     return { status: "ok", commit: nextCommit };
