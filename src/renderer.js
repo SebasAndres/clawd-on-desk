@@ -56,6 +56,8 @@ let _accessoryPayload = {
   offsetY: 0,
 };
 let _accessorySupported = false;
+const BODY_SKIN_IDS = new Set(["boca"]);
+const BUILTIN_ASSETS_PATH = "../assets/svg";
 let _accessoryAnimationsSupported = false;
 let _accessoryAttachments = null;
 let _accessoryAssetFile = null;
@@ -142,7 +144,7 @@ function initWithConfig(cfg) {
   applyObjectScaleStyle(clawdEl, getObjectSvgName(clawdEl), null);
   applyObjectScaleStyle(pendingNext, getObjectSvgName(pendingNext), null);
   updateAccessoryAnimationClass(_accessoryPayload.id);
-  if (_accessorySupported && _accessoryPayload.id !== "none") {
+  if (_accessorySupported && _accessoryPayload.id !== "none" && !getActiveBodySkin()) {
     ensureAccessoryAsset();
   }
 }
@@ -599,7 +601,7 @@ function applyPetTintToElement(element) {
     && element.classList
     && element.classList.contains("clawd-img");
   if (!isPetObject && !isPetImg) return;
-  element.style.filter = _petTintSupported ? _petTintPayload.filter : "";
+  element.style.filter = _petTintSupported && !getActiveBodySkin() ? _petTintPayload.filter : "";
 }
 
 function applyPetTintToAllMedia() {
@@ -639,7 +641,22 @@ function normalizeAccessoryPayload(payload) {
   if (!Number.isFinite(aspect) || aspect < 0.1 || aspect > 10) return none;
   if (!Number.isFinite(widthScale) || widthScale < 0.25 || widthScale > 2.5) return none;
   if (!Number.isFinite(offsetY) || Math.abs(offsetY) > 64) return none;
-  return { id, assetFile, aspect, widthScale, offsetY };
+  const out = { id, assetFile, aspect, widthScale, offsetY };
+  if (BODY_SKIN_IDS.has(payload.bodySkin)) out.bodySkin = payload.bodySkin;
+  return out;
+}
+
+// ── Body skins ──
+// Some accessories (the Boca jersey) are painted into the pet body instead of
+// overlaid: the renderer loads a pre-generated copy of the built-in SVGs from
+// assets/svg/<skin>/ and skips the overlay + tint filter (a grayscale tint
+// would also grey out the jersey; the skin bakes its own body colour).
+function getActiveBodySkin() {
+  if (!_accessorySupported || !_accessoryPayload) return null;
+  const skin = _accessoryPayload.bodySkin;
+  if (!BODY_SKIN_IDS.has(skin)) return null;
+  if (_assetsPath !== BUILTIN_ASSETS_PATH) return null;
+  return skin;
 }
 
 function cancelAccessoryFollow() {
@@ -772,6 +789,7 @@ function flushAccessoryAssetWaiters() {
 
 function shouldWaitForAccessoryAsset(file, state) {
   if (!_accessorySupported || _accessoryPayload.id === "none") return false;
+  if (getActiveBodySkin()) return false;
   const descriptor = getAccessoryDescriptor(file, state);
   if (!descriptor || descriptor.visibility === "hidden") return false;
   ensureAccessoryAsset();
@@ -804,6 +822,7 @@ function deferSwapUntilAccessorySettles(file, state, next, callback) {
 function getCurrentAccessoryContext() {
   if (!_accessorySupported || !_accessoryAttachments) return null;
   if (!_accessoryPayload || _accessoryPayload.id === "none" || !_accessoryPayload.assetFile) return null;
+  if (getActiveBodySkin()) return null;
   if (!clawdEl || !clawdEl.isConnected || !currentDisplayedSvg) return null;
   const descriptor = getAccessoryDescriptor(currentDisplayedSvg, currentDisplayedState);
   if (!descriptor || typeof descriptor !== "object") return null;
@@ -945,7 +964,7 @@ function refreshAccessoryLayout() {
 function updateAccessoryAnimationClass(id) {
   if (!accessoryEl) return;
   accessoryEl.classList.remove("accessory-idle-sway", "accessory-swing-granadero");
-  if (!_accessoryAnimationsSupported || id === "none") return;
+  if (!_accessoryAnimationsSupported || id === "none" || getActiveBodySkin()) return;
   accessoryEl.classList.add(
     id === "granadero-hat" ? "accessory-swing-granadero" : "accessory-idle-sway"
   );
@@ -954,16 +973,28 @@ function updateAccessoryAnimationClass(id) {
 function setAccessoryPayload(payload) {
   const next = normalizeAccessoryPayload(payload);
   const fileChanged = next.assetFile !== _accessoryAssetFile;
+  const prevSkin = getActiveBodySkin();
   _accessoryPayload = next;
+  const skinChanged = getActiveBodySkin() !== prevSkin;
   updateAccessoryAnimationClass(next.id);
+  if (skinChanged) applyPetTintToAllMedia();
   if (next.id === "none" || !_accessorySupported) {
     clearAccessoryRuntime({ clearAsset: true });
-    refreshAccessoryMediaChannel();
+    if (!refreshAccessoryMediaChannel() && skinChanged) reloadDisplayedForBodySkin();
     return;
   }
-  if (fileChanged) clearAccessoryRuntime({ clearAsset: true });
+  if (fileChanged || skinChanged) clearAccessoryRuntime({ clearAsset: true });
   refreshAccessoryLayout();
-  refreshAccessoryMediaChannel();
+  if (!refreshAccessoryMediaChannel() && skinChanged) reloadDisplayedForBodySkin();
+}
+
+function reloadDisplayedForBodySkin() {
+  const file = pendingNext && pendingSvgFile ? pendingSvgFile : currentDisplayedSvg;
+  if (!file || !isSvgFile(file)) return;
+  const state = pendingNext ? getPendingSwapState(pendingNext, currentState) : currentDisplayedState;
+  cancelPendingSwap();
+  detachEyeTracking();
+  swapToFile(file, state, undefined, { forceDocumentReload: true });
 }
 
 if (window.electronAPI && typeof window.electronAPI.onPetAccessoryChange === "function") {
@@ -1219,6 +1250,7 @@ function needsObjectChannel(state, file) {
   const accessoryDescriptor = getAccessoryDescriptor(file, state);
   const needsAccessoryFollow = !!(
     _accessoryPayload.id !== "none"
+    && !getActiveBodySkin()
     && accessoryDescriptor
     && accessoryDescriptor.followTarget
   );
@@ -1328,7 +1360,8 @@ function clearCloudlingPointerBridge(objectEl = clawdEl) {
 function getAssetUrl(file) {
   if (!file) return "";
   if (file.endsWith(".svg") || !_sourceAssetsPath) {
-    return `${_assetsPath}/${file}`;
+    const skin = file.endsWith(".svg") ? getActiveBodySkin() : null;
+    return skin ? `${_assetsPath}/${skin}/${file}` : `${_assetsPath}/${file}`;
   }
   return `${_sourceAssetsPath}/${file}`;
 }
