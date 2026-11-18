@@ -1,12 +1,12 @@
 "use strict";
 
 const {
-  getPetTintIdForTheme,
   resolvePetTintPayload,
   resolvePetAccessoryPayload,
 } = require("./pet-customization-catalog");
 const {
   getEffectivePetAccessoryIdForTheme,
+  getEffectivePetTintIdForTheme,
 } = require("./holiday-accessory");
 
 const MENU_AFFECTING_KEYS = new Set([
@@ -122,22 +122,28 @@ function createSettingsEffectRouter(options = {}) {
         syncSessionHudVisibility
       );
     }
-    if ("petTint" in changes) {
+    if ("petTint" in changes || "teamAccessoryEnabled" in changes) {
       const activeTheme = getActiveTheme();
-      const tintId = getPetTintIdForTheme(changes.petTint, activeTheme && activeTheme._id);
+      const snapshot = settingsController.getSnapshot();
+      const tintId = getEffectivePetTintIdForTheme({
+        petTint: "petTint" in changes ? changes.petTint : snapshot.petTint,
+        teamAccessoryEnabled: "teamAccessoryEnabled" in changes
+          ? changes.teamAccessoryEnabled
+          : snapshot.teamAccessoryEnabled,
+        themeId: activeTheme && activeTheme._id,
+        date: now(),
+      });
       sendToRenderer("pet-tint-change", resolvePetTintPayload(tintId, activeTheme));
     }
     if (
       "petAccessory" in changes
       || "holidayAccessoryEnabled" in changes
-      || "teamAccessoryEnabled" in changes
     ) {
       const activeTheme = getActiveTheme();
       const snapshot = settingsController.getSnapshot();
       const accessoryId = getEffectivePetAccessoryIdForTheme({
         petAccessory: snapshot.petAccessory,
         holidayAccessoryEnabled: snapshot.holidayAccessoryEnabled,
-        teamAccessoryEnabled: snapshot.teamAccessoryEnabled,
         themeId: activeTheme && activeTheme._id,
         date: now(),
       });

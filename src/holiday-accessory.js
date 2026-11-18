@@ -4,6 +4,9 @@ const {
   getPetAccessoryIdForTheme,
   isPetAccessoryId,
   resolvePetAccessoryPayload,
+  getPetTint,
+  getPetTintIdForTheme,
+  resolvePetTintPayload,
 } = require("./pet-customization-catalog");
 const {
   getTeamAccessoryForDate,
@@ -107,13 +110,10 @@ function isHolidayAccessoryEnabledForTheme(selections, themeId) {
   return selections[themeId] === true;
 }
 
-// Priority: patriotic holiday > that day's Boca Juniors roll > manual pick.
-// Both automatic layers fall back to the manual accessory when they have
-// nothing to show, so the user's saved choice is still the resting state.
+// Patriotic holidays (when enabled) override the manual accessory pick.
 function getEffectivePetAccessoryIdForTheme({
   petAccessory,
   holidayAccessoryEnabled,
-  teamAccessoryEnabled,
   themeId,
   date = new Date(),
 } = {}) {
@@ -122,11 +122,26 @@ function getEffectivePetAccessoryIdForTheme({
     const holiday = getHolidayAccessoryForDate(date);
     if (holiday) return holiday.accessoryId;
   }
-  if (isTeamAccessoryEnabledForTheme(teamAccessoryEnabled, themeId)) {
-    const team = getTeamAccessoryForDate(date);
-    if (team && isPetAccessoryId(team.accessoryId)) return team.accessoryId;
-  }
   return manualAccessoryId;
+}
+
+// The daily Boca roll (when enabled) swaps the tint slot to the Boca body
+// skin, so it composes with whatever accessory is worn. Themes that don't
+// ship the skin keep their manual tint.
+function getEffectivePetTintIdForTheme({
+  petTint,
+  teamAccessoryEnabled,
+  themeId,
+  date = new Date(),
+} = {}) {
+  const manualTintId = getPetTintIdForTheme(petTint, themeId);
+  if (!isTeamAccessoryEnabledForTheme(teamAccessoryEnabled, themeId)) return manualTintId;
+  const team = getTeamAccessoryForDate(date);
+  if (!team) return manualTintId;
+  const entry = getPetTint(team.tintId);
+  if (entry.id !== team.tintId) return manualTintId;
+  if (entry.themes && !entry.themes.includes(themeId)) return manualTintId;
+  return entry.id;
 }
 
 function getNextHolidayRefreshDelay(date = new Date()) {
@@ -171,21 +186,33 @@ function createHolidayAccessoryRuntime(options = {}) {
   let started = false;
   let refreshTimer = null;
   let lastDisplayKey = null;
+  let lastTintKey = null;
 
   function resolveDisplay() {
     const snapshot = getSettingsSnapshot() || {};
     const theme = getActiveTheme() || null;
     const themeId = theme && theme._id;
+    const date = now();
     const accessoryId = getEffectivePetAccessoryIdForTheme({
       petAccessory: snapshot.petAccessory,
       holidayAccessoryEnabled: snapshot.holidayAccessoryEnabled,
+      themeId,
+      date,
+    });
+    const tintId = getEffectivePetTintIdForTheme({
+      petTint: snapshot.petTint,
       teamAccessoryEnabled: snapshot.teamAccessoryEnabled,
       themeId,
-      date: now(),
+      date,
     });
+    // The tint slot is owned by main/settings-effect-router; the runtime only
+    // drives it while the daily Boca roll is opted in (it may flip at midnight).
+    const ownsTint = isTeamAccessoryEnabledForTheme(snapshot.teamAccessoryEnabled, themeId);
     return {
       key: `${themeId || ""}|${accessoryId}`,
       payload: resolvePetAccessoryPayload(accessoryId, theme),
+      tintKey: ownsTint ? `${themeId || ""}|${tintId}` : null,
+      tintPayload: ownsTint ? resolvePetTintPayload(tintId, theme) : null,
     };
   }
 
@@ -197,10 +224,18 @@ function createHolidayAccessoryRuntime(options = {}) {
       try { logWarn("Clawd: holiday accessory refresh failed:", err && err.message); } catch {}
       return false;
     }
-    if (!force && resolved.key === lastDisplayKey) return false;
+    const sendTint = resolved.tintPayload && (force || resolved.tintKey !== lastTintKey);
+    if (!sendTint) lastTintKey = resolved.tintKey;
+    if (!force && resolved.key === lastDisplayKey && !sendTint) return false;
     try {
-      sendToRenderer("pet-accessory-change", resolved.payload);
-      lastDisplayKey = resolved.key;
+      if (force || resolved.key !== lastDisplayKey) {
+        sendToRenderer("pet-accessory-change", resolved.payload);
+        lastDisplayKey = resolved.key;
+      }
+      if (sendTint) {
+        sendToRenderer("pet-tint-change", resolved.tintPayload);
+        lastTintKey = resolved.tintKey;
+      }
       return true;
     } catch (err) {
       try { logWarn("Clawd: holiday accessory delivery failed:", err && err.message); } catch {}
@@ -251,6 +286,7 @@ function createHolidayAccessoryRuntime(options = {}) {
       powerMonitor.removeListener("unlock-screen", handleClockContextChange);
     }
     lastDisplayKey = null;
+    lastTintKey = null;
   }
 
   return {
@@ -266,6 +302,7 @@ module.exports = {
   getHolidayAccessoryForDate,
   isHolidayAccessoryEnabledForTheme,
   getEffectivePetAccessoryIdForTheme,
+  getEffectivePetTintIdForTheme,
   getNextHolidayRefreshDelay,
   createHolidayAccessoryRuntime,
 };

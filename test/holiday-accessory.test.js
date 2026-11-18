@@ -12,6 +12,7 @@ const {
   getHolidayAccessoryForDate,
   isHolidayAccessoryEnabledForTheme,
   getEffectivePetAccessoryIdForTheme,
+  getEffectivePetTintIdForTheme,
   getNextHolidayRefreshDelay,
   createHolidayAccessoryRuntime,
 } = require("../src/holiday-accessory");
@@ -138,44 +139,54 @@ describe("holiday accessory date rules", () => {
     }), "pumpkin-hat");
   });
 
-  it("composes patriotic holidays over the daily Boca roll over the manual pick", () => {
-    const manual = { clawd: "wizard-hat" };
+  it("keeps the daily Boca roll on the tint slot, independent of accessories", () => {
+    const manual = { clawd: "soccer-ball" };
     // 2026-04-10 is a non-holiday date that hits the default 15% Boca roll;
     // 2026-02-01 is a non-holiday date that misses it (see team-accessory.test.js).
     const bocaDay = localDate(4, 10);
     const quietDay = localDate(2, 1);
 
-    assert.strictEqual(getEffectivePetAccessoryIdForTheme({
-      petAccessory: manual,
-      holidayAccessoryEnabled: {},
+    assert.strictEqual(getEffectivePetTintIdForTheme({
+      petTint: { clawd: "mono" },
       teamAccessoryEnabled: {},
       themeId: "clawd",
       date: bocaDay,
-    }), "wizard-hat", "team accessory off falls back to manual even on a hit day");
+    }), "mono", "roll off keeps the manual tint even on a hit day");
 
-    assert.strictEqual(getEffectivePetAccessoryIdForTheme({
-      petAccessory: manual,
-      holidayAccessoryEnabled: {},
+    assert.strictEqual(getEffectivePetTintIdForTheme({
+      petTint: { clawd: "mono" },
       teamAccessoryEnabled: { clawd: true },
       themeId: "clawd",
       date: quietDay,
-    }), "wizard-hat", "a miss day falls back to manual");
+    }), "mono", "a miss day keeps the manual tint");
+
+    assert.strictEqual(getEffectivePetTintIdForTheme({
+      petTint: { clawd: "mono" },
+      teamAccessoryEnabled: { clawd: true },
+      themeId: "clawd",
+      date: bocaDay,
+    }), "boca", "a hit day wears the Boca jersey skin");
+
+    assert.strictEqual(getEffectivePetTintIdForTheme({
+      petTint: { calico: "gold" },
+      teamAccessoryEnabled: { calico: true },
+      themeId: "calico",
+      date: bocaDay,
+    }), "gold", "themes without the skin keep their tint");
 
     assert.strictEqual(getEffectivePetAccessoryIdForTheme({
       petAccessory: manual,
       holidayAccessoryEnabled: {},
-      teamAccessoryEnabled: { clawd: true },
       themeId: "clawd",
       date: bocaDay,
-    }), "boca-scarf", "a hit day wears the scarf");
+    }), "soccer-ball", "the Boca roll never displaces the accessory");
 
     assert.strictEqual(getEffectivePetAccessoryIdForTheme({
       petAccessory: manual,
       holidayAccessoryEnabled: { clawd: true },
-      teamAccessoryEnabled: { clawd: true },
       themeId: "clawd",
       date: localDate(5, 25),
-    }), "escarapela", "a patriotic holiday wins over the Boca roll");
+    }), "escarapela", "a patriotic holiday still overrides the accessory");
   });
 
   it("refreshes no later than the next local midnight or one hour", () => {

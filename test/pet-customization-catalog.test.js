@@ -26,7 +26,7 @@ describe("pet customization catalog", () => {
   it("keeps one ordered, immutable source of truth for persisted tint ids", () => {
     assert.deepStrictEqual(
       PET_TINT_IDS,
-      ["none", "midnight", "gold", "vaporwave", "matcha", "mono"]
+      ["none", "midnight", "gold", "vaporwave", "matcha", "mono", "boca"]
     );
     assert.strictEqual(new Set(PET_TINT_IDS).size, PET_TINT_IDS.length);
     assert.ok(Object.isFrozen(PET_TINT_CATALOG));
@@ -38,7 +38,9 @@ describe("pet customization catalog", () => {
     const options = listPetTintOptions();
     assert.deepStrictEqual(
       options,
-      PET_TINT_CATALOG.map(({ id, labelKey }) => ({ id, labelKey }))
+      PET_TINT_CATALOG.map(({ id, labelKey, themes }) => (
+        themes ? { id, labelKey, themes: [...themes] } : { id, labelKey }
+      ))
     );
     assert.ok(options.every((entry) => !Object.prototype.hasOwnProperty.call(entry, "filter")));
   });
@@ -107,7 +109,8 @@ describe("pet customization catalog", () => {
     for (const entry of PET_TINT_CATALOG) {
       assert.match(entry.id, /^[a-z][a-z0-9-]{0,31}$/);
       assert.match(entry.labelKey, /^[A-Za-z][A-Za-z0-9]{0,63}$/);
-      if (entry.id === "none") {
+      if (entry.id === "none" || entry.bodySkin) {
+        // "none" and body skins (Boca: swapped SVGs, not a filter) carry none.
         assert.strictEqual(entry.filter, "");
       } else {
         assert.ok(entry.filter.split(/\s+/).every((part) => token.test(part)), entry.filter);
@@ -131,7 +134,7 @@ describe("pet customization catalog", () => {
         "escarapela",
         "granadero-hat",
         "argentina-badge",
-        "boca-scarf",
+        "soccer-ball",
       ]
     );
     assert.strictEqual(new Set(PET_ACCESSORY_IDS).size, PET_ACCESSORY_IDS.length);
@@ -147,10 +150,16 @@ describe("pet customization catalog", () => {
     const options = listPetAccessoryOptions();
     assert.deepStrictEqual(
       options,
-      PET_ACCESSORY_CATALOG.map(({ id, labelKey }) => ({ id, labelKey }))
+      PET_ACCESSORY_CATALOG.map(({ id, labelKey, themes }) => (
+        themes ? { id, labelKey, themes: [...themes] } : { id, labelKey }
+      ))
     );
     for (const entry of options) {
-      assert.deepStrictEqual(Object.keys(entry).sort(), ["id", "labelKey"]);
+      const keys = Object.keys(entry).sort();
+      assert.ok(
+        ["id,labelKey", "id,labelKey,themes"].includes(keys.join(",")),
+        `unexpected option keys: ${keys.join(",")}`
+      );
     }
   });
 
@@ -236,7 +245,8 @@ describe("pet customization catalog", () => {
           assert.ok(Number.isFinite(widthScale) && widthScale >= 0.25 && widthScale <= 2.5);
         }
       }
-      if (entry.id === "none") {
+      if (entry.id === "none" || entry.bodySkin) {
+        // "none" and skin-only entries (Boca jersey) carry no overlay asset.
         assert.strictEqual(entry.file, null);
         assert.strictEqual(entry.viewBox, null);
       } else {

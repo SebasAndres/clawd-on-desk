@@ -558,11 +558,12 @@ describe("settings-effect-router", () => {
     const clawd = {
       _id: "clawd",
       _builtin: true,
-      _capabilities: { accessories: true },
+      _capabilities: { accessories: true, petTint: true },
     };
     const { calls, emit } = createHarness({
       initialSnapshot: {
         petAccessory: { clawd: "wizard-hat" },
+        petTint: { clawd: "mono" },
         teamAccessoryEnabled: {},
       },
       routerOptions: {
@@ -574,11 +575,18 @@ describe("settings-effect-router", () => {
     });
 
     emit({ teamAccessoryEnabled: { clawd: true } });
-    assert.strictEqual(calls[1][2].id, "boca-scarf");
+    const tintCall = () => calls.find((call) => call[1] === "pet-tint-change");
+    assert.strictEqual(tintCall()[2].id, "boca");
+    assert.strictEqual(tintCall()[2].bodySkin, "boca");
+    assert.strictEqual(
+      calls.some((call) => call[1] === "pet-accessory-change"),
+      false,
+      "the Boca roll lives on the tint slot and leaves the accessory alone"
+    );
 
     calls.length = 0;
     emit({ teamAccessoryEnabled: {} });
-    assert.strictEqual(calls[1][2].id, "wizard-hat");
+    assert.strictEqual(tintCall()[2].id, "mono");
     assert.strictEqual(calls.some((call) => call[0] === "rebuildAllMenus"), false);
   });
 

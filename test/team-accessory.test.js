@@ -4,7 +4,7 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
-  TEAM_ACCESSORY_ID,
+  TEAM_TINT_ID,
   DAILY_CHANCE_DEFAULT,
   getTeamAccessoryForDate,
   isTeamAccessoryEnabledForTheme,
@@ -30,7 +30,7 @@ describe("team accessory daily roll", () => {
 
   it("always rolls a hit at chance=1 and never at a vanishingly small chance", () => {
     const hit = getTeamAccessoryForDate(localDate(3, 3), 1);
-    assert.deepStrictEqual(hit, { accessoryId: TEAM_ACCESSORY_ID });
+    assert.deepStrictEqual(hit, { tintId: TEAM_TINT_ID });
     assert.strictEqual(getTeamAccessoryForDate(localDate(3, 3), Number.MIN_VALUE), null);
   });
 

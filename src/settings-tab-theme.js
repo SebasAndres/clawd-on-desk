@@ -321,7 +321,7 @@
     parent.appendChild(section);
   }
 
-  function getTintOptions() {
+  function getTintOptions(themeId = null) {
     return Array.isArray(runtime.petTintOptions)
       ? runtime.petTintOptions.filter((entry) => (
         entry
@@ -329,6 +329,9 @@
         && /^[a-z][a-z0-9-]{0,31}$/.test(entry.id)
         && typeof entry.labelKey === "string"
         && /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(entry.labelKey)
+        // Theme-restricted entries (the Boca body skin) only show for the
+        // themes that ship them.
+        && (!Array.isArray(entry.themes) || entry.themes.includes(themeId))
       ))
       : [];
   }
@@ -378,7 +381,7 @@
 
     const control = document.createElement("div");
     control.className = "row-control";
-    const options = getTintOptions();
+    const options = getTintOptions(theme.id);
     const pickerOptions = options.length > 0
       ? options.map((entry) => ({ value: entry.id, label: t(entry.labelKey) }))
       : [{ value: "none", label: t("tintNone") }];

@@ -94,12 +94,12 @@ const { createKimiQuotaClient } = require("./kimi-quota-client");
 const { createKimiQuotaCredentialStore } = require("./kimi-quota-credential-store");
 const { createKimiQuotaRuntime } = require("./kimi-quota-runtime");
 const {
-  getPetTintIdForTheme,
   resolvePetTintPayload,
   resolvePetAccessoryPayload,
 } = require("./pet-customization-catalog");
 const {
   getEffectivePetAccessoryIdForTheme,
+  getEffectivePetTintIdForTheme,
   createHolidayAccessoryRuntime,
 } = require("./holiday-accessory");
 const { registerSessionIpc } = require("./session-ipc");
@@ -1306,12 +1306,15 @@ function syncHitStateAfterLoad() {
 function syncRendererStateAfterLoad({ includeStartupRecovery = true } = {}) {
   syncSoundPreloads();
   const activeTheme = getActiveTheme();
-  const tintId = getPetTintIdForTheme(petTint, activeTheme && activeTheme._id);
+  const tintId = getEffectivePetTintIdForTheme({
+    petTint,
+    teamAccessoryEnabled: _settingsController.get("teamAccessoryEnabled"),
+    themeId: activeTheme && activeTheme._id,
+  });
   sendToRenderer("pet-tint-change", resolvePetTintPayload(tintId, activeTheme));
   const accessoryId = getEffectivePetAccessoryIdForTheme({
     petAccessory,
     holidayAccessoryEnabled: _settingsController.get("holidayAccessoryEnabled"),
-    teamAccessoryEnabled: _settingsController.get("teamAccessoryEnabled"),
     themeId: activeTheme && activeTheme._id,
   });
   sendToRenderer("pet-accessory-change", resolvePetAccessoryPayload(accessoryId, activeTheme));
@@ -1805,11 +1808,14 @@ function buildRendererThemeConfig() {
   if (cfg) {
     const activeTheme = getActiveTheme();
     const tintSelections = _settingsController.get("petTint");
-    const tintId = getPetTintIdForTheme(tintSelections, activeTheme && activeTheme._id);
+    const tintId = getEffectivePetTintIdForTheme({
+      petTint: tintSelections,
+      teamAccessoryEnabled: _settingsController.get("teamAccessoryEnabled"),
+      themeId: activeTheme && activeTheme._id,
+    });
     const accessoryId = getEffectivePetAccessoryIdForTheme({
       petAccessory: _settingsController.get("petAccessory"),
       holidayAccessoryEnabled: _settingsController.get("holidayAccessoryEnabled"),
-      teamAccessoryEnabled: _settingsController.get("teamAccessoryEnabled"),
       themeId: activeTheme && activeTheme._id,
     });
     cfg.idleDefaultVisual = getIdleVisualChoice();

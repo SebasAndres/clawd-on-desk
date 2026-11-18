@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Soccer ball — pixel art (8x8) at the right end of a wide 44x8 canvas so
+     it rests on the ground beside Clawd's right foot (see the "soccer-ball"
+     entry in pet-customization-catalog.js); the rest is transparent. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 8" shape-rendering="crispEdges" width="44" height="8">
+  <g transform="translate(36 0)">
+    <!-- outline -->
+    <g fill="#1a1a1a">
+      <rect x="2" y="0" width="4" height="1"/>
+      <rect x="1" y="1" width="6" height="1"/>
+      <rect x="0" y="2" width="8" height="4"/>
+      <rect x="1" y="6" width="6" height="1"/>
+      <rect x="2" y="7" width="4" height="1"/>
+    </g>
+    <!-- white leather -->
+    <g fill="#f4f6f8">
+      <rect x="2" y="1" width="4" height="1"/>
+      <rect x="1" y="2" width="6" height="4"/>
+      <rect x="2" y="6" width="4" height="1"/>
+    </g>
+    <!-- pentagons: solid centre, softer grey patches toward the rim -->
+    <rect x="3" y="3" width="2" height="2" fill="#1a1a1a"/>
+    <g fill="#8a9099">
+      <rect x="1" y="2" width="1" height="1"/>
+      <rect x="6" y="2" width="1" height="1"/>
+      <rect x="3" y="6" width="2" height="1"/>
+    </g>
+  </g>
+</svg>

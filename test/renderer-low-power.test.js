@@ -1531,9 +1531,7 @@ describe("renderer pet tint", () => {
     assert.ok(preload.includes(
       'onPetTintChange: (cb) => ipcRenderer.on("pet-tint-change", (_, payload) => cb(payload))'
     ));
-    assert.ok(main.includes(
-      "const tintId = getPetTintIdForTheme(petTint, activeTheme && activeTheme._id);"
-    ));
+    assert.ok(main.includes("const tintId = getEffectivePetTintIdForTheme({\n    petTint,"));
   });
 });
 

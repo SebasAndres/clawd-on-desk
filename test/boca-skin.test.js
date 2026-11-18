@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { transform } = require("../tools/generate-boca-skin");
-const { resolvePetAccessoryPayload } = require("../src/pet-customization-catalog");
+const { resolvePetAccessoryPayload, resolvePetTintPayload } = require("../src/pet-customization-catalog");
 
 const SVG_DIR = path.join(__dirname, "..", "assets", "svg");
 
@@ -45,15 +45,22 @@ describe("Boca body skin", () => {
     }
   });
 
-  it("only flags the skin for the built-in clawd theme", () => {
-    const clawd = resolvePetAccessoryPayload("boca-scarf", {
+  it("is a tint-slot body skin offered only for the built-in clawd theme", () => {
+    const caps = { petTint: true, accessories: true };
+    const clawd = resolvePetTintPayload("boca", { _id: "clawd", _builtin: true, _capabilities: caps });
+    const calico = resolvePetTintPayload("boca", { _id: "calico", _builtin: true, _capabilities: caps });
+    const fakeClawd = resolvePetTintPayload("boca", { _id: "clawd", _builtin: false, _capabilities: caps });
+    assert.deepStrictEqual(clawd, { id: "boca", filter: "", bodySkin: "boca" });
+    assert.deepStrictEqual(calico, { id: "none", filter: "" });
+    assert.deepStrictEqual(fakeClawd, { id: "none", filter: "" });
+  });
+
+  it("leaves the accessory slot free for the soccer ball", () => {
+    const ball = resolvePetAccessoryPayload("soccer-ball", {
       _id: "clawd", _builtin: true, _capabilities: { accessories: true },
     });
-    const calico = resolvePetAccessoryPayload("boca-scarf", {
-      _id: "calico", _builtin: true, _capabilities: { accessories: true },
-    });
-    assert.strictEqual(clawd.bodySkin, "boca");
-    assert.strictEqual(calico.bodySkin, undefined);
-    assert.strictEqual(calico.id, "boca-scarf");
+    assert.strictEqual(ball.id, "soccer-ball");
+    assert.strictEqual(ball.assetFile, "soccer-ball.svg");
+    assert.strictEqual(ball.bodySkin, undefined);
   });
 });

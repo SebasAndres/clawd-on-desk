@@ -1,11 +1,11 @@
 "use strict";
 
-// Random "team of the day" accessory — currently just Boca Juniors. Unlike
+// Random "team of the day" outfit — currently just Boca Juniors. Unlike
 // holiday-accessory.js this has no date windows: any day has a small,
-// deterministic-per-day chance of showing the scarf, so restarting the app
-// mid-day doesn't re-roll the outcome.
+// deterministic-per-day chance of wearing the Boca jersey body skin (the
+// "boca" pet tint), so restarting the app mid-day doesn't re-roll it.
 
-const TEAM_ACCESSORY_ID = "boca-scarf";
+const TEAM_TINT_ID = "boca";
 const DAILY_CHANCE_DEFAULT = 0.15;
 
 function isValidDate(value) {
@@ -35,7 +35,7 @@ function getTeamAccessoryForDate(date = new Date(), chance = DAILY_CHANCE_DEFAUL
   if (typeof chance !== "number" || !Number.isFinite(chance) || chance <= 0) return null;
   const roll = hashDayToUnitInterval(`boca-scarf:${dateKey(date)}`);
   if (roll >= chance) return null;
-  return { accessoryId: TEAM_ACCESSORY_ID };
+  return { tintId: TEAM_TINT_ID };
 }
 
 function isTeamAccessoryEnabledForTheme(selections, themeId) {
@@ -45,7 +45,7 @@ function isTeamAccessoryEnabledForTheme(selections, themeId) {
 }
 
 module.exports = {
-  TEAM_ACCESSORY_ID,
+  TEAM_TINT_ID,
   DAILY_CHANCE_DEFAULT,
   getTeamAccessoryForDate,
   isTeamAccessoryEnabledForTheme,
